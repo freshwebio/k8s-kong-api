@@ -3,6 +3,7 @@ Application that listens to Kubernetes events to dynamically create kong APIs, u
 
 ## Requirements
 Kubernetes >= 1.5
+
 Kong API Gateway >= 0.10.0
 
 ## Building application (Standalone)
