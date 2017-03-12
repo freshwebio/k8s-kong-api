@@ -16,6 +16,7 @@ import (
 var (
 	kubeconfig    = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 	kubeNamespace = flag.String("namespace", "default", "The namespace to use to watch k8s events in.")
+	kongScheme    = flag.String("kongscheme", "http://", "The scheme of the kong admin api, http or https")
 	kongHost      = flag.String("konghost", "kong", "The host of the kong admin api")
 	kongPort      = flag.String("kongport", "8001", "The port the kong admin api lives on")
 	routesLabel   = flag.String("routeslabel", "kong.api.routes", "The name of the label to identify kong services")
@@ -41,7 +42,7 @@ func main() {
 		}
 	}
 	// Now let's initialise our kong client.
-	kongClient := kong.NewClient(*kongHost, *kongPort)
+	kongClient := kong.NewClient(*kongHost, *kongPort, *kongScheme)
 	// Now let's instantiate and start our service which deals
 	// with listening to kubernetes events and propogating events
 	// to kong accordingly.

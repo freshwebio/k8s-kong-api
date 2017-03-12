@@ -28,8 +28,8 @@ type Client struct {
 
 // NewClient creates a new instance
 // of the kong client.
-func NewClient(host string, port string) *Client {
-	return &Client{host: host, port: port, client: http.DefaultClient}
+func NewClient(host string, port string, scheme string) *Client {
+	return &Client{host: scheme + host, port: port, client: http.DefaultClient}
 }
 
 // CreateAPI creates a new API in kong.
