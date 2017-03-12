@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 )
@@ -34,6 +35,18 @@ func NewClient(host string, port string, scheme string) *Client {
 	return &Client{host: scheme + host, port: port, client: http.DefaultClient}
 }
 
+// Helper method to setting headers for every request.
+func newRequest(method string, url string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return req, err
+	}
+	if method == "POST" || method == "PUT" {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	return req, err
+}
+
 // CreateAPI creates a new API in kong.
 func (c *Client) CreateAPI(api *API) (*API, error) {
 	b := new(bytes.Buffer)
@@ -43,7 +56,7 @@ func (c *Client) CreateAPI(api *API) (*API, error) {
 	}
 	log.Printf("\nMaking request to the kong admin api (%v) to create API with payload:\n%v\n",
 		c.host+":"+c.port, string(b.Bytes()))
-	req, err := http.NewRequest("POST", c.host+":"+c.port+apisEndpoint, b)
+	req, err := newRequest("POST", c.host+":"+c.port+apisEndpoint, b)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +79,7 @@ func (c *Client) CreateAPI(api *API) (*API, error) {
 func (c *Client) GetAPI(nameOrID string) (*API, error) {
 	log.Printf("\nMaking request to the kong admin api (%v) to get the %v API\n",
 		c.host+":"+c.port, nameOrID)
-	req, err := http.NewRequest("GET", c.host+":"+c.port+apisEndpoint+nameOrID, nil)
+	req, err := newRequest("GET", c.host+":"+c.port+apisEndpoint+nameOrID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +117,7 @@ func (c *Client) UpdateAPI(api *API) (*API, error) {
 	}
 	log.Printf("\nMaking request to the kong admin api (%v) to update the %v API with payload:\n%v\n",
 		c.host+":"+c.port, nameOrID, string(b.Bytes()))
-	req, err := http.NewRequest("PUT", c.host+":"+c.port+apisEndpoint+nameOrID, b)
+	req, err := newRequest("PUT", c.host+":"+c.port+apisEndpoint+nameOrID, b)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +142,7 @@ func (c *Client) UpdateAPI(api *API) (*API, error) {
 func (c *Client) DeleteAPI(nameOrID string) error {
 	log.Printf("\nMaking request to the kong admin api (%v) to delete the %v API\n",
 		c.host+":"+c.port, nameOrID)
-	req, err := http.NewRequest("DELETE", c.host+":"+c.port+apisEndpoint+nameOrID, nil)
+	req, err := newRequest("DELETE", c.host+":"+c.port+apisEndpoint+nameOrID, nil)
 	if err != nil {
 		return err
 	}
@@ -155,7 +168,7 @@ func (c *Client) CreateUpstream(upstream *Upstream) (*Upstream, error) {
 	}
 	log.Printf("\nMaking request to the kong admin api (%v) to create upstream with payload:\n%v\n",
 		c.host+":"+c.port, string(b.Bytes()))
-	req, err := http.NewRequest("POST", c.host+":"+c.port+upstreamsEndpoint, b)
+	req, err := newRequest("POST", c.host+":"+c.port+upstreamsEndpoint, b)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +192,7 @@ func (c *Client) CreateUpstream(upstream *Upstream) (*Upstream, error) {
 func (c *Client) GetUpstream(nameOrId string) (*Upstream, error) {
 	log.Printf("\nMaking request to the kong admin api (%v) to get the %v upstream\n",
 		c.host+":"+c.port, nameOrId)
-	req, err := http.NewRequest("GET", c.host+":"+c.port+upstreamsEndpoint+nameOrId, nil)
+	req, err := newRequest("GET", c.host+":"+c.port+upstreamsEndpoint+nameOrId, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +218,7 @@ func (c *Client) GetUpstream(nameOrId string) (*Upstream, error) {
 func (c *Client) DeleteUpstream(nameOrId string) error {
 	log.Printf("\nMaking request to the kong admin api (%v) to delete the %v upstream\n",
 		c.host+":"+c.port, nameOrId)
-	req, err := http.NewRequest("DELETE", c.host+":"+c.port+upstreamsEndpoint+nameOrId, nil)
+	req, err := newRequest("DELETE", c.host+":"+c.port+upstreamsEndpoint+nameOrId, nil)
 	if err != nil {
 		return err
 	}
@@ -236,7 +249,7 @@ func (c *Client) UpdateUpstream(upstream *Upstream) (*Upstream, error) {
 	}
 	log.Printf("\nMaking request to the kong admin api (%v) to update the %v upstream with payload:\n%v\n",
 		c.host+":"+c.port, nameOrId, string(b.Bytes()))
-	req, err := http.NewRequest("PUT", c.host+":"+c.port+apisEndpoint+nameOrId, b)
+	req, err := newRequest("PUT", c.host+":"+c.port+apisEndpoint+nameOrId, b)
 	if err != nil {
 		return nil, err
 	}
@@ -267,7 +280,7 @@ func (c *Client) CreateTarget(upstreamNameOrId string, target *Target) (*Target,
 	}
 	log.Printf("\nMaking request to the kong admin api (%v) to create target for the %v upstream with payload:\n%v\n",
 		c.host+":"+c.port, upstreamNameOrId, string(b.Bytes()))
-	req, err := http.NewRequest("POST", c.host+":"+c.port+upstreamsEndpoint+upstreamNameOrId+targetsEndpoint, b)
+	req, err := newRequest("POST", c.host+":"+c.port+upstreamsEndpoint+upstreamNameOrId+targetsEndpoint, b)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +304,7 @@ func (c *Client) CreateTarget(upstreamNameOrId string, target *Target) (*Target,
 func (c *Client) ListTargets(upstreamNameOrId string) (*TargetList, error) {
 	log.Printf("\nMaking request to the kong admin api (%v) to list targets for the %v upstream\n",
 		c.host+":"+c.port, upstreamNameOrId)
-	req, err := http.NewRequest("GET", c.host+":"+c.port+upstreamsEndpoint+upstreamNameOrId+targetsEndpoint, nil)
+	req, err := newRequest("GET", c.host+":"+c.port+upstreamsEndpoint+upstreamNameOrId+targetsEndpoint, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +350,7 @@ func (c *Client) newTargetEntry(upstreamNameOrId string, targetHost string, weig
 	log.Printf("\nMaking request to the kong admin api (%v) to create a new target entry (enable or disable) "+
 		"for the %v upstream with payload:\n%v\n",
 		c.host+":"+c.port, upstreamNameOrId, string(b.Bytes()))
-	req, err := http.NewRequest("POST", c.host+":"+c.port+upstreamsEndpoint+upstreamNameOrId+targetsEndpoint, b)
+	req, err := newRequest("POST", c.host+":"+c.port+upstreamsEndpoint+upstreamNameOrId+targetsEndpoint, b)
 	if err != nil {
 		return nil, err
 	}
