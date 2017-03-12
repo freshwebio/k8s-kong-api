@@ -5,7 +5,7 @@ package kong
 type API struct {
 	ID          string   `json:"id,omitempty"`
 	Name        string   `json:"name"`
-	URIs        []string `json:"hosts"`
+	URIs        []string `json:"uris"`
 	UpstreamURL string   `json:"upstream_url"`
 	StripURI    bool     `json:"strip_uri,omitempty"`
 }
