@@ -88,9 +88,9 @@ func (s *Service) process(srv *v1.Service, eventType watch.EventType) {
 	if exists {
 		log.Println("Processing service with the paths label: " + pathStr)
 		name := srv.GetName()
-		// Now we need to use the internal FQDN for the service for the upstream
-		// targets as the kong underlying DNS resolver fails to resolve the simple service aliases.
-		internalFQDN := name + "." + srv.Namespace + ".svc.cluster.local"
+		// Use cluster IP as all dns resolution or service names or internal k8s FQDNs
+		// simply doesn't work correctly. If a cluster IP isn't set for the service then this will not work.
+		clusterIP := srv.Spec.ClusterIP
 		upstreams := []string{}
 		// Now for each of the ports the service is exposing
 		// create a new upstream target entry or if the routes label
@@ -106,11 +106,11 @@ func (s *Service) process(srv *v1.Service, eventType watch.EventType) {
 				}
 			}
 			if found {
-				upstreams = append(upstreams, internalFQDN+":"+strconv.Itoa(int(srv.Spec.Ports[i].Port)))
+				upstreams = append(upstreams, clusterIP+":"+strconv.Itoa(int(srv.Spec.Ports[i].Port)))
 			}
 		} else {
 			for _, port := range srv.Spec.Ports {
-				upstreams = append(upstreams, internalFQDN+":"+strconv.Itoa(int(port.Port)))
+				upstreams = append(upstreams, clusterIP+":"+strconv.Itoa(int(port.Port)))
 			}
 		}
 		// Now lets get our paths from the label.
