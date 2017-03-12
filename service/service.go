@@ -150,6 +150,9 @@ func (s *Service) process(srv *v1.Service, eventType watch.EventType) {
 // Deals with updating our API entry and upstream/targets for the specified
 // service according to changes in paths and provided upstream targets.
 func (s *Service) updateUpstreams(name string, paths []string, upstreams []string) error {
+	// Lets prepend http:// to the upstream for the upstream name as only
+	// valid urls are supported for upstreams.
+	upstreamName := "http://" + name
 	// First of all we'll load up the API.
 	api, err := s.kongcli.GetAPI(name)
 	if err != nil {
@@ -178,13 +181,13 @@ func (s *Service) updateUpstreams(name string, paths []string, upstreams []strin
 	}
 	// Now we'll get the list of upstream targets to disable, enable
 	// and add new targets accordingly.
-	targets, err := s.kongcli.ListTargets(name)
+	targets, err := s.kongcli.ListTargets(upstreamName)
 	if err != nil {
 		return err
 	}
 	newTargets := s.createNewTargets(upstreams, targets)
 	for _, target := range newTargets {
-		_, err := s.kongcli.CreateTarget(name, target)
+		_, err := s.kongcli.CreateTarget(upstreamName, target)
 		if err != nil {
 			return err
 		}
@@ -239,6 +242,8 @@ func targetInUpstreams(target string, upstreams []string) bool {
 // Deals with removing the API entry and upstream entry
 // with the provided service name from the Kong API gateway.
 func (s *Service) removeUpstreams(name string) error {
+	// Prepend http:// for the valid upstream handle.
+	upstreamName := "http://" + name
 	// First remove the API.
 	err := s.kongcli.DeleteAPI(name)
 	if err != nil {
@@ -246,18 +251,19 @@ func (s *Service) removeUpstreams(name string) error {
 		return err
 	}
 	// Now remove the upstream entry with the same service name.
-	return s.kongcli.DeleteUpstream(name)
+	return s.kongcli.DeleteUpstream(upstreamName)
 }
 
 // Deals with adding upstreams to an exiting kong API entry
 // or create a new API with the upstreams provided for the specified path.
 func (s *Service) addUpstreams(serviceName string, paths []string, upstreams []string) error {
+	upstreamName := "http://" + serviceName
 	// First check if an upstream exists for the provided service.
-	_, err := s.kongcli.GetUpstream(serviceName)
+	_, err := s.kongcli.GetUpstream(upstreamName)
 	if err != nil {
 		// If the Upstream doesn't exist already we'll create it.
 		if err == kong.ErrNotFound {
-			upstream := &kong.Upstream{Name: serviceName}
+			upstream := &kong.Upstream{Name: upstreamName}
 			_, err = s.kongcli.CreateUpstream(upstream)
 			if err != nil {
 				return err
@@ -271,7 +277,7 @@ func (s *Service) addUpstreams(serviceName string, paths []string, upstreams []s
 			Target: upstream,
 			Weight: 10,
 		}
-		_, err = s.kongcli.CreateTarget(serviceName, target)
+		_, err = s.kongcli.CreateTarget(upstreamName, target)
 		if err != nil {
 			return err
 		}
@@ -288,7 +294,7 @@ func (s *Service) addUpstreams(serviceName string, paths []string, upstreams []s
 				// can take multiple URIs.
 				// TODO: Allow for APIs that strip the URI.
 				StripURI:    false,
-				UpstreamURL: serviceName,
+				UpstreamURL: upstreamName,
 			}
 			_, err = s.kongcli.CreateAPI(api)
 			if err != nil {
