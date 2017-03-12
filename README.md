@@ -30,3 +30,29 @@ To run with flags simply provide the flags and for environment variables, make s
 and then simply run the binary.
 The best way to run the application in cluster would be to provide environment variables to the k8s pod container
 which encapsulates the application.
+
+## Creating k8s services that map to kong API objects.
+
+Below is an example of a service configuration to expose a service as a kong upstream API:
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-auth
+  labels:
+    myapi.routes: "/auth,/oauth"
+    myapi.port: "3001"
+spec:
+  type: NodePort
+  ports:
+    - name: auth
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+    - name: auth2
+      port: 3001
+      targetPort: 3001
+      protocol: TCP
+  selector:
+    app: myapp-auth
+```
