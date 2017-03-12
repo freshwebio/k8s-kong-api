@@ -32,6 +32,7 @@ func NewService(kongClient *kong.Client, k8sClient *k8sclient.Client,
 // Start begins our process in listening to k8s services and updating
 // kong upstream services accordingly.
 func (s *Service) Start() {
+	log.Println("Starting the watcher service")
 	// First of all list existing services and spawn a new goroutine to deal with
 	// adding entries to kong accordingly while we begin watching service events.
 	existingList, err := s.k8scli.ListServices(s.namespace, s.routesLabel)
@@ -60,6 +61,7 @@ func (s *Service) Start() {
 // service events.
 func (s *Service) Stop() {
 	if s.watcher != (watch.Interface)(nil) {
+		log.Println("Stopping the watcher service")
 		s.watcher.Stop()
 	}
 }
@@ -71,6 +73,7 @@ func (s *Service) Stop() {
 // is first loaded to load all the existing services labelled accordingly
 // as kong upstream services.
 func (s *Service) processBatch(services []v1.Service) {
+	log.Println("Processing initial batch of services with the routes label")
 	for _, srv := range services {
 		s.process(&srv, watch.Added)
 	}
@@ -81,6 +84,7 @@ func (s *Service) processBatch(services []v1.Service) {
 func (s *Service) process(srv *v1.Service, eventType watch.EventType) {
 	pathStr, exists := srv.GetLabels()[s.routesLabel]
 	if exists {
+		log.Println("Processing service with the paths label: " + pathStr)
 		name := srv.GetName()
 		upstreams := []string{}
 		// Now for each of the ports the service is exposing
@@ -116,17 +120,29 @@ func (s *Service) process(srv *v1.Service, eventType watch.EventType) {
 		}
 		switch eventType {
 		case watch.Added:
+			log.Println("Reacting to service added event")
 			// Now we'll add our upstreams for the API or create our API to
 			// add the upstreams to.
-			s.addUpstreams(name, paths, upstreams)
+			err := s.addUpstreams(name, paths, upstreams)
+			if err != nil {
+				log.Println("Adding upstreams error: " + err.Error())
+			}
 		case watch.Modified:
 			// Deals with adding new upstreams if any and removing upstreams
 			// that no longer exist as well as updating the set of uris for the API
 			// entry if changed.
-			s.updateUpstreams(name, paths, upstreams)
+			log.Println("Reacting to service update event")
+			err := s.updateUpstreams(name, paths, upstreams)
+			if err != nil {
+				log.Println("Updating upstreams error: " + err.Error())
+			}
 		case watch.Deleted:
 			// Removes the API entry and the upstream with the deleted service's name.
-			s.removeUpstreams(name)
+			log.Println("Reacting to service deletion event")
+			err := s.removeUpstreams(name)
+			if err != nil {
+				log.Println("Removing upstreams error: " + err.Error())
+			}
 		}
 	}
 }
@@ -288,6 +304,7 @@ func (s *Service) addUpstreams(serviceName string, paths []string, upstreams []s
 func (s *Service) processEvent(event watch.Event) {
 	srv, ok := event.Object.(*v1.Service)
 	if ok {
+		log.Println("Beginning processing of k8s service watch event")
 		s.process(srv, event.Type)
 	} else {
 		log.Println("The event object was expected to be a " +
