@@ -30,6 +30,7 @@ below is a table of the config used and the default values:
 | string | -kongscheme https://      | KONGSCHEME="https://"      | kongscheme https://      | "http://"          |
 | string | -routesLabel myapi.routes | ROUTESLABEL="myapi.routes" | routesLabel myapi.routes | "kong.api.routes"  |
 | string | -portLabel myapi.port     | PORTLABEL="myapi.port"     | portLabel myapi.port     | "kong.api.port"    |
+| string | -vhostPrefix kong-host-   | VHOSTPREFIX="kong-host-"   | vhostPrefix kong-host-   | "kong-upstream-"   |
 
 To provide a configuration file run ./k8s-kong-api -config myconf.conf,
 To run with flags simply provide the flags and for environment variables, make sure the env vars are set
