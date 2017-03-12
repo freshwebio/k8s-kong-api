@@ -1,3 +1,3 @@
-FROM scratch
-ADD k8s-kong-api .
-CMD ['/k8s-kong-api']
+FROM busybox
+ADD k8s-kong-api /
+CMD ["/k8s-kong-api"]
