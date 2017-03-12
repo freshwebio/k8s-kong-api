@@ -45,7 +45,7 @@ kind: Service
 metadata:
   name: myapp-auth
   labels:
-    myapi.routes: "/auth,/oauth"
+    myapi.routes: "auth_oauth"
     myapi.port: "3001"
 spec:
   type: NodePort

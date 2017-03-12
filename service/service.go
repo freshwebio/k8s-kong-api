@@ -105,7 +105,15 @@ func (s *Service) process(srv *v1.Service, eventType watch.EventType) {
 			}
 		}
 		// Now lets get our paths from the label.
-		paths := strings.Split(pathStr, ",")
+		// Unfortunately because of Kubernetes strict regular expression
+		// for metadata labels we have to unconventionally use _ as the path separator.
+		paths := strings.Split(pathStr, "_")
+		// We also need to prepend / to the paths to make them as root uris.
+		// Kubernetes labels don't accept / as a valid character so we have to preprocess
+		// them instead.
+		for i, path := range paths {
+			paths[i] = "/" + path
+		}
 		switch eventType {
 		case watch.Added:
 			// Now we'll add our upstreams for the API or create our API to
