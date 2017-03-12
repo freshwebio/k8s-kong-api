@@ -1,6 +1,10 @@
 # k8s-kong-api
 Application that listens to Kubernetes events to dynamically create kong APIs, upstreams and targets.
 
+## Requirements
+Kubernetes >= 1.5
+Kong API Gateway >= 0.10.0
+
 ## Building application (Standalone)
 To build this application standalone simply run `go build` from the root directory after ensuring
 all the dependencies are current by ensuring you have the godep tool installed and running `godep restore`.
