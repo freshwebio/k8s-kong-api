@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -39,6 +41,8 @@ func (c *Client) CreateAPI(api *API) (*API, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("\nMaking request to the kong admin api (%v) to create API with payload:\n%v\n",
+		c.host+":"+c.port, string(b.Bytes()))
 	req, err := http.NewRequest("POST", c.host+":"+c.port+apisEndpoint, b)
 	if err != nil {
 		return nil, err
@@ -49,7 +53,7 @@ func (c *Client) CreateAPI(api *API) (*API, error) {
 	}
 	var createdAPI *API
 	if resp.StatusCode != http.StatusCreated {
-		return nil, errors.New("Failed to create the specified API")
+		return nil, fmt.Errorf("Failed to create the specified API with status code %v", resp.StatusCode)
 	}
 	err = json.NewDecoder(resp.Body).Decode(&createdAPI)
 	if err != nil {
@@ -60,6 +64,8 @@ func (c *Client) CreateAPI(api *API) (*API, error) {
 
 // GetAPI retrieves an API by it's name or id.
 func (c *Client) GetAPI(nameOrID string) (*API, error) {
+	log.Printf("\nMaking request to the kong admin api (%v) to get the %v API\n",
+		c.host+":"+c.port, nameOrID)
 	req, err := http.NewRequest("GET", c.host+":"+c.port+apisEndpoint+nameOrID, nil)
 	if err != nil {
 		return nil, err
@@ -71,7 +77,7 @@ func (c *Client) GetAPI(nameOrID string) (*API, error) {
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, ErrNotFound
 	} else if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("Failed to retrieve the specified API")
+		return nil, fmt.Errorf("Failed to retrieve the specified API with status code %v", resp.StatusCode)
 	}
 	var api *API
 	err = json.NewDecoder(resp.Body).Decode(&api)
@@ -96,6 +102,8 @@ func (c *Client) UpdateAPI(api *API) (*API, error) {
 	} else {
 		nameOrID = api.Name
 	}
+	log.Printf("\nMaking request to the kong admin api (%v) to update the %v API with payload:\n%v\n",
+		c.host+":"+c.port, nameOrID, string(b.Bytes()))
 	req, err := http.NewRequest("PUT", c.host+":"+c.port+apisEndpoint+nameOrID, b)
 	if err != nil {
 		return nil, err
@@ -107,7 +115,7 @@ func (c *Client) UpdateAPI(api *API) (*API, error) {
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, ErrNotFound
 	} else if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, errors.New("Failed to update the specified API")
+		return nil, fmt.Errorf("Failed to update the specified API with status code %v", resp.StatusCode)
 	}
 	var updatedAPI *API
 	err = json.NewDecoder(resp.Body).Decode(&updatedAPI)
@@ -119,6 +127,8 @@ func (c *Client) UpdateAPI(api *API) (*API, error) {
 
 // DeleteAPI deals with removing the specified API.
 func (c *Client) DeleteAPI(nameOrID string) error {
+	log.Printf("\nMaking request to the kong admin api (%v) to delete the %v API\n",
+		c.host+":"+c.port, nameOrID)
 	req, err := http.NewRequest("DELETE", c.host+":"+c.port+apisEndpoint+nameOrID, nil)
 	if err != nil {
 		return err
@@ -130,7 +140,7 @@ func (c *Client) DeleteAPI(nameOrID string) error {
 	if resp.StatusCode == http.StatusNotFound {
 		return ErrNotFound
 	} else if resp.StatusCode != http.StatusNoContent {
-		return errors.New("Failed to delete the API with the provided identifier")
+		return fmt.Errorf("Failed to delete the API with the provided identifier with status code %v", resp.StatusCode)
 	}
 	return nil
 }
@@ -143,6 +153,8 @@ func (c *Client) CreateUpstream(upstream *Upstream) (*Upstream, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("\nMaking request to the kong admin api (%v) to create upstream with payload:\n%v\n",
+		c.host+":"+c.port, string(b.Bytes()))
 	req, err := http.NewRequest("POST", c.host+":"+c.port+upstreamsEndpoint, b)
 	if err != nil {
 		return nil, err
@@ -152,7 +164,7 @@ func (c *Client) CreateUpstream(upstream *Upstream) (*Upstream, error) {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusCreated {
-		return nil, errors.New("Failed to create the specified upstream")
+		return nil, fmt.Errorf("Failed to create the specified upstream with status code %v", resp.StatusCode)
 	}
 	var createdUpstream *Upstream
 	err = json.NewDecoder(resp.Body).Decode(&createdUpstream)
@@ -165,6 +177,8 @@ func (c *Client) CreateUpstream(upstream *Upstream) (*Upstream, error) {
 // GetUpstream deals with retrieving the upstream
 // with the specified name or ID.
 func (c *Client) GetUpstream(nameOrId string) (*Upstream, error) {
+	log.Printf("\nMaking request to the kong admin api (%v) to get the %v upstream\n",
+		c.host+":"+c.port, nameOrId)
 	req, err := http.NewRequest("GET", c.host+":"+c.port+upstreamsEndpoint+nameOrId, nil)
 	if err != nil {
 		return nil, err
@@ -176,7 +190,7 @@ func (c *Client) GetUpstream(nameOrId string) (*Upstream, error) {
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, ErrNotFound
 	} else if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("Failed to retrieve the specified upstream")
+		return nil, fmt.Errorf("Failed to retrieve the specified upstream with status code %v", resp.StatusCode)
 	}
 	var upstream *Upstream
 	err = json.NewDecoder(resp.Body).Decode(&upstream)
@@ -189,6 +203,8 @@ func (c *Client) GetUpstream(nameOrId string) (*Upstream, error) {
 // DeleteUpstream deals with removing the upstream
 // object with the specified name or ID.
 func (c *Client) DeleteUpstream(nameOrId string) error {
+	log.Printf("\nMaking request to the kong admin api (%v) to delete the %v upstream\n",
+		c.host+":"+c.port, nameOrId)
 	req, err := http.NewRequest("DELETE", c.host+":"+c.port+upstreamsEndpoint+nameOrId, nil)
 	if err != nil {
 		return err
@@ -200,7 +216,7 @@ func (c *Client) DeleteUpstream(nameOrId string) error {
 	if resp.StatusCode == http.StatusNotFound {
 		return ErrNotFound
 	} else if resp.StatusCode != http.StatusNoContent {
-		return errors.New("Failed to delete the upstream with the provided identifier")
+		return fmt.Errorf("Failed to delete the upstream with the provided identifier with status code %v", resp.StatusCode)
 	}
 	return nil
 }
@@ -218,6 +234,8 @@ func (c *Client) UpdateUpstream(upstream *Upstream) (*Upstream, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("\nMaking request to the kong admin api (%v) to update the %v upstream with payload:\n%v\n",
+		c.host+":"+c.port, nameOrId, string(b.Bytes()))
 	req, err := http.NewRequest("PUT", c.host+":"+c.port+apisEndpoint+nameOrId, b)
 	if err != nil {
 		return nil, err
@@ -229,7 +247,7 @@ func (c *Client) UpdateUpstream(upstream *Upstream) (*Upstream, error) {
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, ErrNotFound
 	} else if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, errors.New("Failed to update the provided upstream")
+		return nil, fmt.Errorf("Failed to update the provided upstream with status code %v", resp.StatusCode)
 	}
 	var updatedUpstream *Upstream
 	err = json.NewDecoder(resp.Body).Decode(&updatedUpstream)
@@ -247,6 +265,8 @@ func (c *Client) CreateTarget(upstreamNameOrId string, target *Target) (*Target,
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("\nMaking request to the kong admin api (%v) to create target for the %v upstream with payload:\n%v\n",
+		c.host+":"+c.port, upstreamNameOrId, string(b.Bytes()))
 	req, err := http.NewRequest("POST", c.host+":"+c.port+upstreamsEndpoint+upstreamNameOrId+targetsEndpoint, b)
 	if err != nil {
 		return nil, err
@@ -256,7 +276,7 @@ func (c *Client) CreateTarget(upstreamNameOrId string, target *Target) (*Target,
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusCreated {
-		return nil, errors.New("Failed to create the specified target for the specified upstream")
+		return nil, fmt.Errorf("Failed to create the specified target for the specified upstream with status code %v", resp.StatusCode)
 	}
 	var createdTarget *Target
 	err = json.NewDecoder(resp.Body).Decode(&createdTarget)
@@ -269,6 +289,8 @@ func (c *Client) CreateTarget(upstreamNameOrId string, target *Target) (*Target,
 // ListTargets lists out all the targets for a specified
 // upstream.
 func (c *Client) ListTargets(upstreamNameOrId string) (*TargetList, error) {
+	log.Printf("\nMaking request to the kong admin api (%v) to list targets for the %v upstream\n",
+		c.host+":"+c.port, upstreamNameOrId)
 	req, err := http.NewRequest("GET", c.host+":"+c.port+upstreamsEndpoint+upstreamNameOrId+targetsEndpoint, nil)
 	if err != nil {
 		return nil, err
@@ -280,7 +302,7 @@ func (c *Client) ListTargets(upstreamNameOrId string) (*TargetList, error) {
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, ErrNotFound
 	} else if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("Failed to retrieve the list of targets for the provided upstream")
+		return nil, fmt.Errorf("Failed to retrieve the list of targets for the provided upstream with status code %v", resp.StatusCode)
 	}
 	var targetList *TargetList
 	err = json.NewDecoder(resp.Body).Decode(&targetList)
@@ -312,6 +334,9 @@ func (c *Client) newTargetEntry(upstreamNameOrId string, targetHost string, weig
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("\nMaking request to the kong admin api (%v) to create a new target entry (enable or disable) "+
+		"for the %v upstream with payload:\n%v\n",
+		c.host+":"+c.port, upstreamNameOrId, string(b.Bytes()))
 	req, err := http.NewRequest("POST", c.host+":"+c.port+upstreamsEndpoint+upstreamNameOrId+targetsEndpoint, b)
 	if err != nil {
 		return nil, err
@@ -323,7 +348,7 @@ func (c *Client) newTargetEntry(upstreamNameOrId string, targetHost string, weig
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, ErrNotFound
 	} else if resp.StatusCode != http.StatusCreated {
-		return nil, errors.New("Failed to create the new target entry")
+		return nil, fmt.Errorf("Failed to create the new target entry with status code %v", resp.StatusCode)
 	}
 	var createdTarget *Target
 	err = json.NewDecoder(resp.Body).Decode(&createdTarget)
