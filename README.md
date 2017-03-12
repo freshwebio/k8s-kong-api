@@ -28,9 +28,9 @@ below is a table of the config used and the default values:
 | string | -konghost kong-api        | KONGHOST="kong-api"        | konghost kong-api        | "kong"             |
 | string | -kongport 8001            | KONGPORT="8001"            | kongport 8001            | "8001"             |
 | string | -kongscheme https://      | KONGSCHEME="https://"      | kongscheme https://      | "http://"          |
-| string | -routesLabel myapi.routes | ROUTESLABEL="myapi.routes" | routesLabel myapi.routes | "kong.api.routes"  |
-| string | -portLabel myapi.port     | PORTLABEL="myapi.port"     | portLabel myapi.port     | "kong.api.port"    |
-| string | -vhostPrefix kong-host-   | VHOSTPREFIX="kong-host-"   | vhostPrefix kong-host-   | "kong-upstream-"   |
+| string | -routeslabel myapi.routes | ROUTESLABEL="myapi.routes" | routeslabel myapi.routes | "kong.api.routes"  |
+| string | -portlabel myapi.port     | PORTLABEL="myapi.port"     | portlabel myapi.port     | "kong.api.port"    |
+| string | -vhostprefix kong-host-   | VHOSTPREFIX="kong-host-"   | vhostprefix kong-host-   | "kong-upstream-"   |
 
 To provide a configuration file run ./k8s-kong-api -config myconf.conf,
 To run with flags simply provide the flags and for environment variables, make sure the env vars are set
