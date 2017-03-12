@@ -126,7 +126,90 @@ func (s *Service) process(srv *v1.Service, eventType watch.EventType) {
 // Deals with updating our API entry and upstream/targets for the specified
 // service according to changes in paths and provided upstream targets.
 func (s *Service) updateUpstreams(name string, paths []string, upstreams []string) error {
+	// First of all we'll load up the API.
+	api, err := s.kongcli.GetAPI(name)
+	if err != nil {
+		return err
+	}
+	// Replace the list of paths if the list of paths differs.
+	var differs bool
+	if len(paths) != len(api.URIs) {
+		differs = true
+	} else {
+		i := 0
+		for !differs && i < len(paths) {
+			if api.URIs[i] != paths[i] {
+				differs = true
+			} else {
+				i++
+			}
+		}
+	}
+	if differs {
+		api.URIs = paths
+		_, err = s.kongcli.UpdateAPI(api)
+		if err != nil {
+			return err
+		}
+	}
+	// Now we'll get the list of upstream targets to disable, enable
+	// and add new targets accordingly.
+	targets, err := s.kongcli.ListTargets(name)
+	if err != nil {
+		return err
+	}
+	newTargets := s.createNewTargets(upstreams, targets)
+	for _, target := range newTargets {
+		_, err := s.kongcli.CreateTarget(name, target)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+// Checks the difference between a list of kong targets and of the targets
+// retrieved from a k8s service.
+func (s *Service) createNewTargets(upstreams []string, targets *kong.TargetList) []*kong.Target {
+	var newTargets []*kong.Target
+	for _, target := range targets.Data {
+		if targetInUpstreams(target.Target, upstreams) {
+			// If the weight is set to 0 (The target is disabled) we'll add a new target
+			// entry with a weight of 10.
+			if target.Weight == 0 {
+				newTarget := &kong.Target{
+					Target: target.Target,
+					Weight: 10,
+				}
+				newTargets = append(newTargets, newTarget)
+			}
+		} else {
+			// Where the target is not in the set of upstreams
+			// then we'll create a new entry which disables the target.
+			if target.Weight > 0 {
+				newTarget := &kong.Target{
+					Target: target.Target,
+					Weight: 0,
+				}
+				newTargets = append(newTargets, newTarget)
+			}
+		}
+	}
+	return newTargets
+}
+
+// Determines whether the specified target is in the provided set of upstreams.
+func targetInUpstreams(target string, upstreams []string) bool {
+	found := false
+	i := 0
+	for !found && i < len(upstreams) {
+		if upstreams[i] == target {
+			found = true
+		} else {
+			i++
+		}
+	}
+	return found
 }
 
 // Deals with removing the API entry and upstream entry

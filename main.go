@@ -1,11 +1,12 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/namsral/flag"
 
 	"github.com/freshwebio/k8s-kong-api/k8sclient"
 	"github.com/freshwebio/k8s-kong-api/kong"
