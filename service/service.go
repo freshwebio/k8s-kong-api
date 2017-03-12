@@ -29,7 +29,7 @@ func NewService(kongClient *kong.Client, k8sClient *k8sclient.Client,
 		namespace: namespace, routesLabel: routesLabel, portLabel: portLabel}
 }
 
-// Start begins our process in listening to k8s pods and updating
+// Start begins our process in listening to k8s services and updating
 // kong upstream services accordingly.
 func (s *Service) Start() {
 	// First of all list existing services and spawn a new goroutine to deal with
@@ -46,7 +46,7 @@ func (s *Service) Start() {
 	}
 	// Set our watcher so we can stop the streaming from elsewhere at the service level.
 	s.watcher = watcher
-	// Now listen for pods.
+	// Now listen for services.
 	resChan := watcher.ResultChan()
 	for {
 		select {

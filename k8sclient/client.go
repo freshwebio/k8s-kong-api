@@ -48,7 +48,7 @@ func NewClient(configFile string) (*Client, error) {
 // WatchServices deals with watching services for the provided namespace.
 // To note: Only services with the defined label are watched in this stream.
 func (cli *Client) WatchServices(namespace string, routesLabel string) (watch.Interface, error) {
-	// We only care about pods which are created to be upstream
+	// We only care about services which are created to be upstream
 	// API services so filter to only those with the defined
 	// label.
 	options := v1.ListOptions{
