@@ -27,6 +27,7 @@ below is a table of the config used and the default values:
 | string | -namespace myclstr        | NAMESPACE="myclstr"        | namespace myclstr        | "default"          |
 | string | -konghost kong-api        | KONGHOST="kong-api"        | konghost kong-api        | "kong"             |
 | string | -kongport 8001            | KONGPORT="8001"            | kongport 8001            | "8001"             |
+| string | -kongscheme https://      | KONGSCHEME="https://"      | kongscheme https://      | "http://"          |
 | string | -routesLabel myapi.routes | ROUTESLABEL="myapi.routes" | routesLabel myapi.routes | "kong.api.routes"  |
 | string | -portLabel myapi.port     | PORTLABEL="myapi.port"     | portLabel myapi.port     | "kong.api.port"    |
 
