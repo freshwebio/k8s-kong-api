@@ -20,13 +20,15 @@ type Service struct {
 	routesLabel string
 	portLabel   string
 	watcher     watch.Interface
+	vhostPrefix string
 }
 
 // NewService creates a new service implementation.
 func NewService(kongClient *kong.Client, k8sClient *k8sclient.Client,
-	namespace string, routesLabel string, portLabel string) *Service {
+	namespace string, routesLabel string, portLabel string, vhostPrefix string) *Service {
 	return &Service{kongcli: kongClient, k8scli: k8sClient,
-		namespace: namespace, routesLabel: routesLabel, portLabel: portLabel}
+		namespace: namespace, routesLabel: routesLabel, portLabel: portLabel,
+		vhostPrefix: vhostPrefix}
 }
 
 // Start begins our process in listening to k8s services and updating
@@ -178,13 +180,13 @@ func (s *Service) updateUpstreams(name string, paths []string, upstreams []strin
 	}
 	// Now we'll get the list of upstream targets to disable, enable
 	// and add new targets accordingly.
-	targets, err := s.kongcli.ListTargets(name)
+	targets, err := s.kongcli.ListTargets(s.vhostPrefix + name)
 	if err != nil {
 		return err
 	}
 	newTargets := s.createNewTargets(upstreams, targets)
 	for _, target := range newTargets {
-		_, err := s.kongcli.CreateTarget(name, target)
+		_, err := s.kongcli.CreateTarget(s.vhostPrefix+name, target)
 		if err != nil {
 			return err
 		}
@@ -246,18 +248,18 @@ func (s *Service) removeUpstreams(name string) error {
 		return err
 	}
 	// Now remove the upstream entry with the same service name.
-	return s.kongcli.DeleteUpstream(name)
+	return s.kongcli.DeleteUpstream(s.vhostPrefix + name)
 }
 
 // Deals with adding upstreams to an exiting kong API entry
 // or create a new API with the upstreams provided for the specified path.
 func (s *Service) addUpstreams(serviceName string, paths []string, upstreams []string) error {
 	// First check if an upstream exists for the provided service.
-	_, err := s.kongcli.GetUpstream(serviceName)
+	_, err := s.kongcli.GetUpstream(s.vhostPrefix + serviceName)
 	if err != nil {
 		// If the Upstream doesn't exist already we'll create it.
 		if err == kong.ErrNotFound {
-			upstream := &kong.Upstream{Name: serviceName}
+			upstream := &kong.Upstream{Name: s.vhostPrefix + serviceName}
 			_, err = s.kongcli.CreateUpstream(upstream)
 			if err != nil {
 				return err
@@ -271,7 +273,7 @@ func (s *Service) addUpstreams(serviceName string, paths []string, upstreams []s
 			Target: upstream,
 			Weight: 10,
 		}
-		_, err = s.kongcli.CreateTarget(serviceName, target)
+		_, err = s.kongcli.CreateTarget(s.vhostPrefix+serviceName, target)
 		if err != nil {
 			return err
 		}
@@ -290,7 +292,7 @@ func (s *Service) addUpstreams(serviceName string, paths []string, upstreams []s
 				StripURI: false,
 				// Ensure we prepend the upstream handle with http://
 				// as only scheme prepended values are accepted for this field.
-				UpstreamURL: "http://" + serviceName,
+				UpstreamURL: "http://" + s.vhostPrefix + serviceName,
 			}
 			_, err = s.kongcli.CreateAPI(api)
 			if err != nil {
