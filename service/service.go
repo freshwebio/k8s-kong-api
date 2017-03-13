@@ -313,8 +313,5 @@ func (s *Service) processEvent(event watch.Event) {
 	if ok {
 		log.Println("Beginning processing of k8s service watch event")
 		s.process(srv, event.Type)
-	} else {
-		log.Println("The event object was expected to be a " +
-			"pointer to a service object but got something else instead.")
 	}
 }
