@@ -14,21 +14,22 @@ import (
 // Service provides the type for the service which deals with
 // listening to kubernetes events to update kong APIs, upstreams and targets etc..
 type Service struct {
-	kongcli     *kong.Client
-	k8scli      *k8sclient.Client
-	namespace   string
-	routesLabel string
-	portLabel   string
-	watcher     watch.Interface
-	vhostPrefix string
+	kongcli       *kong.Client
+	k8scli        *k8sclient.Client
+	namespace     string
+	routesLabel   string
+	portLabel     string
+	watcher       watch.Interface
+	vhostPrefix   string
+	stripURILabel string
 }
 
 // NewService creates a new service implementation.
 func NewService(kongClient *kong.Client, k8sClient *k8sclient.Client,
-	namespace string, routesLabel string, portLabel string, vhostPrefix string) *Service {
+	namespace string, routesLabel string, portLabel string, vhostPrefix string, stripURILabel string) *Service {
 	return &Service{kongcli: kongClient, k8scli: k8sClient,
 		namespace: namespace, routesLabel: routesLabel, portLabel: portLabel,
-		vhostPrefix: vhostPrefix}
+		vhostPrefix: vhostPrefix, stripURILabel: stripURILabel}
 }
 
 // Start begins our process in listening to k8s services and updating
@@ -113,6 +114,17 @@ func (s *Service) process(srv *v1.Service, eventType watch.EventType) {
 				upstreams = append(upstreams, clusterIP+":"+strconv.Itoa(int(port.Port)))
 			}
 		}
+		var stripURI bool
+		// Now try to get the strip URI flag value for the service.
+		if stripURIVal, exists := srv.GetLabels()[s.stripURILabel]; exists {
+			// Anything other than the string true is assumed to be false.
+			if stripURIVal == "true" {
+				stripURI = true
+			}
+		} else {
+			// Default to true if not provided.
+			stripURI = true
+		}
 		// Now lets get our paths from the label.
 		// Unfortunately because of Kubernetes strict regular expression
 		// for metadata labels we have to unconventionally use _ as the path separator.
@@ -128,7 +140,7 @@ func (s *Service) process(srv *v1.Service, eventType watch.EventType) {
 			log.Println("Reacting to service added event")
 			// Now we'll add our upstreams for the API or create our API to
 			// add the upstreams to.
-			err := s.addUpstreams(name, paths, upstreams)
+			err := s.addUpstreams(name, paths, upstreams, stripURI)
 			if err != nil {
 				log.Println("Adding upstreams error: " + err.Error())
 			}
@@ -256,7 +268,7 @@ func (s *Service) removeUpstreams(name string) error {
 
 // Deals with adding upstreams to an exiting kong API entry
 // or create a new API with the upstreams provided for the specified path.
-func (s *Service) addUpstreams(serviceName string, paths []string, upstreams []string) error {
+func (s *Service) addUpstreams(serviceName string, paths []string, upstreams []string, stripURI bool) error {
 	// First check if an upstream exists for the provided service.
 	_, err := s.kongcli.GetUpstream(s.vhostPrefix + serviceName)
 	if err != nil {
@@ -287,12 +299,9 @@ func (s *Service) addUpstreams(serviceName string, paths []string, upstreams []s
 		// If the API doesn't exist let's create one.
 		if err == kong.ErrNotFound {
 			api := &kong.API{
-				Name: serviceName,
-				URIs: paths,
-				// Don't strip the URI as a single upstream service
-				// can take multiple URIs.
-				// TODO: Allow for APIs that strip the URI.
-				StripURI: false,
+				Name:     serviceName,
+				URIs:     paths,
+				StripURI: stripURI,
 				// Ensure we prepend the upstream handle with http://
 				// as only scheme prepended values are accepted for this field.
 				UpstreamURL: "http://" + s.vhostPrefix + serviceName,

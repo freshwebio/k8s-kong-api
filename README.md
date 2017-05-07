@@ -21,16 +21,17 @@ for in cluster usage.
 You can provide configuration in order to run the application successfully in three different ways,
 below is a table of the config used and the default values:
 
-| Type   | Flag                      | Environment                | File                     | Default value      |
-| ------ | :------------------------ |:-------------------------- |:------------------------ | :----------------- |
-| string | -kubeconfig ./config      | KUBECONFIG="./config"      | kubeconfig ./config      | ""                 |
-| string | -namespace myclstr        | NAMESPACE="myclstr"        | namespace myclstr        | "default"          |
-| string | -konghost kong-api        | KONGHOST="kong-api"        | konghost kong-api        | "kong"             |
-| string | -kongport 8001            | KONGPORT="8001"            | kongport 8001            | "8001"             |
-| string | -kongscheme https://      | KONGSCHEME="https://"      | kongscheme https://      | "http://"          |
-| string | -routeslabel myapi.routes | ROUTESLABEL="myapi.routes" | routeslabel myapi.routes | "kong.api.routes"  |
-| string | -portlabel myapi.port     | PORTLABEL="myapi.port"     | portlabel myapi.port     | "kong.api.port"    |
-| string | -vhostprefix kong-host-   | VHOSTPREFIX="kong-host-"   | vhostprefix kong-host-   | "kong-upstream-"   |
+| Type   | Flag                          | Environment                    | File                          | Default value        |
+| ------ | :---------------------------- |:------------------------------ |:----------------------------- | :------------------- |
+| string | -kubeconfig ./config          | KUBECONFIG="./config"          | kubeconfig ./config           | ""                   |
+| string | -namespace myclstr            | NAMESPACE="myclstr"            | namespace myclstr             | "default"            |
+| string | -konghost kong-api            | KONGHOST="kong-api"            | konghost kong-api             | "kong"               |
+| string | -kongport 8001                | KONGPORT="8001"                | kongport 8001                 | "8001"               |
+| string | -kongscheme https://          | KONGSCHEME="https://"          | kongscheme https://           | "http://"            |
+| string | -routeslabel myapi.routes     | ROUTESLABEL="myapi.routes"     | routeslabel myapi.routes      | "kong.api.routes"    |
+| string | -portlabel myapi.port         | PORTLABEL="myapi.port"         | portlabel myapi.port          | "kong.api.port"      |
+| string | -stripurilabel myapi.stripuri | STRIPURILABEL="myapi.stripuri" | stripurilabel myapi.strip_uri | "kong.api.stripuri" |
+| string | -vhostprefix kong-host-       | VHOSTPREFIX="kong-host-"       | vhostprefix kong-host-        | "kong-upstream-"     |
 
 To provide a configuration file run ./k8s-kong-api -config myconf.conf,
 To run with flags simply provide the flags and for environment variables, make sure the env vars are set
@@ -49,6 +50,7 @@ metadata:
   labels:
     myapi.routes: "auth_oauth"
     myapi.port: "3001"
+    myapi.stripuri: false
 spec:
   type: NodePort
   ports:

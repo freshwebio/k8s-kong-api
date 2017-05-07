@@ -22,6 +22,7 @@ var (
 	vhostPrefix   = flag.String("vhostprefix", "kong-upstream-", "The prefix to be used for the kong upstream object virtual hosts")
 	routesLabel   = flag.String("routeslabel", "kong.api.routes", "The name of the label to identify kong services")
 	portLabel     = flag.String("portlabel", "kong.api.port", "The name of the label that provides the port to be used for a service")
+	stripUriLabel = flag.String("stripurilabel", "kong.api.stripuri", "The name of the label that provides whether to strip the URI from the forwarded request")
 )
 
 func main() {
@@ -47,7 +48,7 @@ func main() {
 	// Now let's instantiate and start our service which deals
 	// with listening to kubernetes events and propogating events
 	// to kong accordingly.
-	srv := service.NewService(kongClient, cli, *kubeNamespace, *routesLabel, *portLabel, *vhostPrefix)
+	srv := service.NewService(kongClient, cli, *kubeNamespace, *routesLabel, *portLabel, *vhostPrefix, *stripUriLabel)
 	srv.Start()
 
 	// Handle SIGINT and SIGTERM.
