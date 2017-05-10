@@ -501,10 +501,30 @@ func (c *Client) UpdatePlugin(apiName string, plugin *Plugin) error {
 }
 
 // RemovePlugin deals with removing the specified plugin from the specified API.
+// This handles managing the current issue with Kong that it's docs say you can use the plugin name
+// in a DELETE request but it is not the case. This retrieves the list of plugins and finds the one
+// with the provided plugin name and gets the ID that way to prevent us having to manage some sort
+// of data store in this app.
 func (c *Client) RemovePlugin(apiName string, pluginName string) error {
+	apiPlugins, err := c.ListApiPlugins(apiName)
+	if err != nil {
+		return err
+	}
+	i := 0
+	pluginID := ""
+	for i < len(apiPlugins.Data) && pluginID == "" {
+		if apiPlugins.Data[i].Name == pluginName {
+			pluginID = apiPlugins.Data[i].ID
+		} else {
+			i++
+		}
+	}
+	if pluginID == "" {
+		return fmt.Errorf("No plugin exists for the provided service with the configuration name: %v", pluginName)
+	}
 	log.Printf("\nMaking request to the kong admin api (%v) to remove the plugin with config name %v for the %v api",
 		c.host+":"+c.port, pluginName, apiName)
-	req, err := newRequest("DELETE", c.host+":"+c.port+apisEndpoint+apiName+pluginsEndpoint+pluginName, nil)
+	req, err := newRequest("DELETE", c.host+":"+c.port+apisEndpoint+apiName+pluginsEndpoint+pluginID, nil)
 	if err != nil {
 		return err
 	}
