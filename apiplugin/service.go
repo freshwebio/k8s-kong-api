@@ -241,7 +241,7 @@ func (s *Service) monitorServiceEvents(namespace string, selector labels.Selecto
 		}
 	}
 	source := k8sclient.NewListWatchFromClient(s.k8sRestClient, "services", namespace, selector)
-	store, ctrl := cache.NewInformer(source, &ApiPlugin{}, 0, cache.ResourceEventHandlerFuncs{
+	store, ctrl := cache.NewInformer(source, &v1.Service{}, 0, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			eventCallback(watch.Added, obj)
 		},
