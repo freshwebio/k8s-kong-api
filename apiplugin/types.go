@@ -23,7 +23,7 @@ type Event struct {
 	Object ApiPlugin `json:"object"`
 }
 
-// ServeiceEvent provides the event recieved for service watchers.
+// ServiceEvent provides the event recieved for service watchers.
 type ServiceEvent struct {
 	Type   string     `json:"type"`
 	Object v1.Service `json:"object"`
