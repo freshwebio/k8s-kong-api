@@ -100,7 +100,7 @@ func main() {
 		log.Fatalf("error creating our general k8s client for the apiplugin service: %v", err)
 	}
 	// Now instantiate our ApiPlugin manager.
-	apipluginService := apiplugin.NewService(k8sRestClient, kongClient, *kubeNamespace, *routesLabel, *pluginServiceSelectorLabel)
+	apipluginService := apiplugin.NewService(k8sRestClient, cli, kongClient, *kubeNamespace, *routesLabel, *pluginServiceSelectorLabel)
 
 	// Asynchronously start watching and refreshing apiplugins and kong API objects
 	wg := sync.WaitGroup{}

@@ -15,7 +15,7 @@ import (
 // Client provides the type to interact
 // with Kubernetes.
 type Client struct {
-	clientset *kubernetes.Clientset
+	Clientset *kubernetes.Clientset
 }
 
 // NewInClusterClient deals with creating a new
@@ -30,7 +30,7 @@ func NewInClusterClient() (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Client{clientset: clientset}, nil
+	return &Client{Clientset: clientset}, nil
 }
 
 // NewClient deals with creating
@@ -46,7 +46,7 @@ func NewClient(configFile string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Client{clientset: clientset}, nil
+	return &Client{Clientset: clientset}, nil
 }
 
 // WatchServices deals with watching services for the provided namespace.
@@ -58,7 +58,7 @@ func (cli *Client) WatchServices(namespace string, routesLabel string) (watch.In
 	options := v1.ListOptions{
 		LabelSelector: routesLabel,
 	}
-	return cli.clientset.Services(namespace).Watch(options)
+	return cli.Clientset.Services(namespace).Watch(options)
 }
 
 // NewListWatchFromClient is a helper method taken from the kube-cert-manager newListWatchFromClient and retrieves a list watch object
@@ -90,5 +90,5 @@ func (cli *Client) ListServices(namespace string, routesLabel string) (*v1.Servi
 	options := v1.ListOptions{
 		LabelSelector: routesLabel,
 	}
-	return cli.clientset.Services(namespace).List(options)
+	return cli.Clientset.Services(namespace).List(options)
 }

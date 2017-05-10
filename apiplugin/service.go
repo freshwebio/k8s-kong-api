@@ -20,6 +20,7 @@ import (
 // and updating the Kong representations accordingly.
 type Service struct {
 	k8sRestClient              *rest.RESTClient
+	k8sClient                  *k8sclient.Client
 	routesLabel                string
 	pluginServiceSelectorLabel string
 	namespace                  string
@@ -27,9 +28,9 @@ type Service struct {
 }
 
 // NewService creates a new instance of the ApiPlugin service.
-func NewService(k8sRestClient *rest.RESTClient, kong *kong.Client, namespace string,
+func NewService(k8sRestClient *rest.RESTClient, k8sClient *k8sclient.Client, kong *kong.Client, namespace string,
 	routesLabel string, pluginServiceSelectorLabel string) *Service {
-	return &Service{k8sRestClient: k8sRestClient, kongClient: kong, namespace: namespace,
+	return &Service{k8sRestClient: k8sRestClient, k8sClient: k8sClient, kongClient: kong, namespace: namespace,
 		routesLabel: routesLabel, pluginServiceSelectorLabel: pluginServiceSelectorLabel}
 }
 
@@ -240,7 +241,7 @@ func (s *Service) monitorServiceEvents(namespace string, selector labels.Selecto
 			Object: *service,
 		}
 	}
-	source := k8sclient.NewListWatchFromClient(s.k8sRestClient, "services", namespace, selector)
+	source := k8sclient.NewListWatchFromClient(s.k8sClient.Clientset.CoreV1().RESTClient(), "services", namespace, selector)
 	store, ctrl := cache.NewInformer(source, &v1.Service{}, 0, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			eventCallback(watch.Added, obj)
