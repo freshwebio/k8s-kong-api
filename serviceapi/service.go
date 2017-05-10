@@ -1,9 +1,10 @@
-package service
+package serviceapi
 
 import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/freshwebio/k8s-kong-api/k8sclient"
 	"github.com/freshwebio/k8s-kong-api/kong"
@@ -34,19 +35,19 @@ func NewService(kongClient *kong.Client, k8sClient *k8sclient.Client,
 
 // Start begins our process in listening to k8s services and updating
 // kong upstream services accordingly.
-func (s *Service) Start() {
-	log.Println("Starting the watcher service")
+func (s *Service) Start(doneChan <-chan struct{}, wg *sync.WaitGroup) {
+	log.Println("Starting the api watcher service")
 	// First of all list existing services and spawn a new goroutine to deal with
 	// adding entries to kong accordingly while we begin watching service events.
 	existingList, err := s.k8scli.ListServices(s.namespace, s.routesLabel)
 	if err != nil {
-		panic(err.Error())
+		log.Fatal(err)
 	}
 	go s.processBatch(existingList.Items)
 	// Now we'll start watching pod events.
 	watcher, err := s.k8scli.WatchServices(s.namespace, s.routesLabel)
 	if err != nil {
-		panic(err.Error())
+		log.Fatal(err)
 	}
 	// Set our watcher so we can stop the streaming from elsewhere at the service level.
 	s.watcher = watcher
@@ -56,6 +57,10 @@ func (s *Service) Start() {
 		select {
 		case event := <-resChan:
 			s.processEvent(event)
+		case <-doneChan:
+			s.Stop()
+			wg.Done()
+			log.Println("Stopped service event watcher.")
 		}
 	}
 }

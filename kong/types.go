@@ -34,3 +34,21 @@ type TargetList struct {
 	Total int       `json:"total"`
 	Data  []*Target `json:"data"`
 }
+
+// Plugin provides the data structure for
+// a Plugin object to be attached to APIs.
+type Plugin struct {
+	ID      string                 `json:"id,omitempty"`
+	APIID   string                 `json:"api_id,omitempty"`
+	Name    string                 `json:"name"`
+	Config  map[string]interface{} `json:"config"`
+	Enabled bool                   `json:"enabled,omitempty"`
+	Created int                    `json:"created_at,omitempty"`
+}
+
+// PluginList represents the data structure returned from kong
+// when making a request to retrieve a list of plugins.
+type PluginList struct {
+	Total int       `json:"total"`
+	Data  []*Plugin `json:"data"`
+}

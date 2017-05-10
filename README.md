@@ -1,5 +1,7 @@
 # k8s-kong-api
-Application that listens to Kubernetes events to dynamically create kong APIs, upstreams and targets.
+Application that listens to Kubernetes events to do the following two things:
+* Dynamically create kong APIs, upstreams and targets.
+* Listen to and manage the custom ApiPlugin k8s resource representing kong plugins that get attached to APIs.
 
 ## Requirements
 Kubernetes >= 1.5
@@ -30,14 +32,17 @@ below is a table of the config used and the default values:
 | string | -kongscheme https://          | KONGSCHEME="https://"          | kongscheme https://           | "http://"            |
 | string | -routeslabel myapi.routes     | ROUTESLABEL="myapi.routes"     | routeslabel myapi.routes      | "kong.api.routes"    |
 | string | -portlabel myapi.port         | PORTLABEL="myapi.port"         | portlabel myapi.port          | "kong.api.port"      |
-| string | -stripurilabel myapi.stripuri | STRIPURILABEL="myapi.stripuri" | stripurilabel myapi.strip_uri | "kong.api.stripuri" |
+| string | -stripurilabel myapi.stripuri | STRIPURILABEL="myapi.stripuri" | stripurilabel myapi.strip_uri | "kong.api.stripuri"  |
 | string | -vhostprefix kong-host-       | VHOSTPREFIX="kong-host-"       | vhostprefix kong-host-        | "kong-upstream-"     |
+| string | -sslabel kong-host-           | SSLABEL="service"              | sslabel kong-host-            | "service"            |
 
 To provide a configuration file run ./k8s-kong-api -config myconf.conf,
 To run with flags simply provide the flags and for environment variables, make sure the env vars are set
 and then simply run the binary.
 The best way to run the application in cluster would be to provide environment variables to the k8s pod container
 which encapsulates the application.
+To clarify sslabel above represents the service selector label on k8s plugins used to map plugins to the correct API objects
+in kong.
 
 ## Creating k8s services that map to kong API objects.
 
@@ -64,4 +69,22 @@ spec:
       protocol: TCP
   selector:
     app: myapp-auth
+```
+
+## Creating k8s ApiPlugin third party resources.
+
+The extension resource is provided in this repository to register the ApiPlugin resource type in kubernetes.
+
+An example of defining one these plugins would be the following:
+```yaml
+apiVersion: "k8s.freshweb.io/v1"
+kind: "ApiPlugin"
+metadata:
+  name: "my-service-key-auth"
+spec:
+  name: "key-auth"
+  config:
+    hide_credentials: true
+  selector:
+    service: my-service
 ```

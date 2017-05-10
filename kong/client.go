@@ -13,6 +13,7 @@ import (
 const (
 	apisEndpoint      = "/apis/"
 	upstreamsEndpoint = "/upstreams/"
+	pluginsEndpoint   = "/plugins/"
 	targetsEndpoint   = "/targets"
 )
 
@@ -369,4 +370,151 @@ func (c *Client) newTargetEntry(upstreamNameOrId string, targetHost string, weig
 		return nil, err
 	}
 	return createdTarget, nil
+}
+
+func (c *Client) ListAPIPlugins(apiName string) (*PluginList, error) {
+	plugins := &PluginList{}
+	log.Printf("\nMaking request to the kong admin api (%v) to retrieve plugins for the %v api", c.host+":"+c.port, apiName)
+	req, err := newRequest("GET", c.host+":"+c.port+apisEndpoint+apiName+pluginsEndpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Failed to retrieve plugins for the %v api with status code %v", apiName, resp.StatusCode)
+	}
+	// Now let's add our created instance fields to the provided plugin.
+	err = json.NewDecoder(resp.Body).Decode(plugins)
+	if err != nil {
+		return nil, err
+	}
+	return plugins, nil
+}
+
+// APIHasPlugin lets us know whether the provided API has an instance
+// of the provided plugin type.
+func (c *Client) APIHasPlugin(apiName string, pluginName string) (bool, error) {
+	hasPlugin := false
+	_, err := c.GetAPI(apiName)
+	if err != nil {
+		// If the API doesn't exist we'll simply return false.
+		if err == ErrNotFound {
+			return hasPlugin, nil
+		}
+		return hasPlugin, err
+	}
+	plugins, err := c.ListAPIPlugins(apiName)
+	if err != nil {
+		return hasPlugin, err
+	}
+	i := 0
+	for i < len(plugins.Data) && !hasPlugin {
+		if plugins.Data[i].Name == pluginName {
+			hasPlugin = true
+		} else {
+			i++
+		}
+	}
+	return hasPlugin, nil
+}
+
+// AddPlugin deals with adding the provided plugin definition to the specified API.
+func (c *Client) AddPlugin(apiName string, plugin *Plugin) error {
+	b := new(bytes.Buffer)
+	err := json.NewEncoder(b).Encode(plugin)
+	if err != nil {
+		return err
+	}
+	log.Printf("\nMaking request to the kong admin api (%v) to create a new plugin for the %v kong API\n",
+		c.host+":"+c.port, apiName)
+	req, err := newRequest("POST", c.host+":"+c.port+apisEndpoint+apiName+pluginsEndpoint, b)
+	if err != nil {
+		return err
+	}
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("Failed to create the new plugin for the %v api with status code %v", apiName, resp.StatusCode)
+	}
+	// Now let's add our created instance fields to the provided plugin.
+	err = json.NewDecoder(resp.Body).Decode(plugin)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetPlugin retrieves the plugin with the provided ID.
+func (c *Client) GetPlugin(pluginID string) (*Plugin, error) {
+	log.Printf("\nMaking request to retrieve the plugin %v from the kong admin api (%v)", c.host+":"+c.port, pluginID)
+	req, err := newRequest("GET", c.host+":"+c.port+pluginsEndpoint+pluginID, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Failed to retrieve the plugin %v from the kong admin api", pluginID)
+	}
+	plugin := &Plugin{}
+	err = json.NewDecoder(resp.Body).Decode(plugin)
+	if err != nil {
+		return nil, err
+	}
+	return plugin, nil
+}
+
+// UpdatePlugin deals with updating an existing plugin with a new definition.
+// The provided plugin definition is expected to be without specific created instance information
+// such as Created, ID and APIID.
+func (c *Client) UpdatePlugin(apiName string, plugin *Plugin) error {
+	b := new(bytes.Buffer)
+	err := json.NewEncoder(b).Encode(plugin)
+	if err != nil {
+		return err
+	}
+	log.Printf("\nMaking request to the kong admin api (%v) to update the plugin with config name %v", c.host+":"+c.port, plugin.Name)
+	req, err := newRequest("PATCH", c.host+":"+c.port+apisEndpoint+apiName+pluginsEndpoint+plugin.Name, b)
+	if err != nil {
+		return err
+	}
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Failed to update the %v plugin for the %v api with status code %v", plugin.Name, apiName, resp.StatusCode)
+	}
+	// Now let's add our updated instance fields to the provided plugin.
+	err = json.NewDecoder(resp.Body).Decode(plugin)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// RemovePlugin deals with removing the specified plugin from the specified API.
+func (c *Client) RemovePlugin(apiName string, pluginName string) error {
+	log.Printf("\nMaking request to the kong admin api (%v) to remove the plugin with config name %v for the %v api",
+		c.host+":"+c.port, pluginName, apiName)
+	req, err := newRequest("DELETE", c.host+":"+c.port+apisEndpoint+apiName+pluginsEndpoint+pluginName, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("Failed to remove the plugin %v from api %v with status code %v",
+			pluginName, apiName, resp.StatusCode)
+	}
+	return nil
 }

@@ -2,9 +2,13 @@ package k8sclient
 
 import (
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/labels"
+	"k8s.io/client-go/pkg/runtime"
 	"k8s.io/client-go/pkg/watch"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -55,6 +59,30 @@ func (cli *Client) WatchServices(namespace string, routesLabel string) (watch.In
 		LabelSelector: routesLabel,
 	}
 	return cli.clientset.Services(namespace).Watch(options)
+}
+
+// NewListWatchFromClient is a helper method taken from the kube-cert-manager newListWatchFromClient and retrieves a list watch object
+// for the provided client.
+func NewListWatchFromClient(c cache.Getter, resource string, namespace string, selector labels.Selector) *cache.ListWatch {
+	listFunc := func(options api.ListOptions) (runtime.Object, error) {
+		return c.Get().
+			Namespace(namespace).
+			Resource(resource).
+			VersionedParams(&options, api.ParameterCodec).
+			LabelsSelectorParam(selector).
+			Do().
+			Get()
+	}
+	watchFunc := func(options api.ListOptions) (watch.Interface, error) {
+		return c.Get().
+			Prefix("watch").
+			Namespace(namespace).
+			Resource(resource).
+			VersionedParams(&options, api.ParameterCodec).
+			LabelsSelectorParam(selector).
+			Watch()
+	}
+	return &cache.ListWatch{ListFunc: listFunc, WatchFunc: watchFunc}
 }
 
 // ListServices retrieves a list of services with the defined label.

@@ -1,0 +1,7 @@
+apiVersion: extensions/v1beta1
+kind: ThirdPartyResource
+description: "A specification of a API gateway plugin to be attached to Kong API objects through their services."
+metadata:
+  name: "api-plugin.k8s.freshweb.io"
+versions:
+  - name: v1
