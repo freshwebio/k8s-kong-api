@@ -70,7 +70,7 @@ func main() {
 			scheme.AddKnownTypes(
 				groupVersion,
 				&apiplugin.ApiPlugin{},
-				&apiplugin.List{},
+				&apiplugin.ApiPluginList{},
 				&api.ListOptions{},
 				&api.DeleteOptions{},
 			)

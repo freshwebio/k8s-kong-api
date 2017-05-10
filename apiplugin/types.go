@@ -57,8 +57,8 @@ func (p *ApiPlugin) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// List provides the type encapsulating a list of ApiPlugin resources.
-type List struct {
+// ApiPluginList provides the type encapsulating a list of ApiPlugin resources.
+type ApiPluginList struct {
 	unversioned.TypeMeta `json:",inline"`
 	Metadata             unversioned.ListMeta `json:"metadata"`
 	Items                []ApiPlugin          `json:"items"`
@@ -66,27 +66,27 @@ type List struct {
 
 // GetObjectKind provides the method to expose the kind
 // of our ApiPlugin List object.
-func (l *List) GetObjectKind() unversioned.ObjectKind {
+func (l *ApiPluginList) GetObjectKind() unversioned.ObjectKind {
 	return &l.TypeMeta
 }
 
 // GetListMeta Retrieves the metadata for the ApiPlugin List.
-func (l *List) GetListMeta() unversioned.List {
+func (l *ApiPluginList) GetListMeta() unversioned.List {
 	return &l.Metadata
 }
 
 // ListCopy provides the type alias for list to be used in unmarshalling from JSON.
-type ListCopy List
+type ListCopy ApiPluginList
 
 // UnmarshalJSON provides the way in which JSON should be unmarshalled correctly for this list type.
 // Temporary workaround for https://github.com/kubernetes/client-go/issues/8
-func (l *List) UnmarshalJSON(data []byte) error {
+func (l *ApiPluginList) UnmarshalJSON(data []byte) error {
 	tmp := ListCopy{}
 	err := json.Unmarshal(data, &tmp)
 	if err != nil {
 		return err
 	}
-	tmp2 := List(tmp)
+	tmp2 := ApiPluginList(tmp)
 	*l = tmp2
 	return nil
 }
@@ -105,10 +105,4 @@ type Spec struct {
 	// should be attached to. This will then create a new plugin on the API object
 	// in Kong.
 	Selector map[string]string `json:"selector"`
-}
-
-// Data provides the data to be persisted about
-// a plugin object in Kong.
-type Data struct {
-	ID string `json:"id"`
 }
