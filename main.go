@@ -69,7 +69,7 @@ func main() {
 		func(scheme *runtime.Scheme) error {
 			scheme.AddKnownTypes(
 				groupVersion,
-				&apiplugin.APIPlugin{},
+				&apiplugin.ApiPlugin{},
 				&apiplugin.List{},
 				&api.ListOptions{},
 				&api.DeleteOptions{},

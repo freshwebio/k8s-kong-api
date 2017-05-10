@@ -26,7 +26,7 @@ type Service struct {
 	kongClient                 *kong.Client
 }
 
-// NewService creates a new instance of the APIPlugin service.
+// NewService creates a new instance of the ApiPlugin service.
 func NewService(k8sRestClient *rest.RESTClient, kong *kong.Client, namespace string,
 	routesLabel string, pluginServiceSelectorLabel string) *Service {
 	return &Service{k8sRestClient: k8sRestClient, kongClient: kong, namespace: namespace,
@@ -89,11 +89,11 @@ func (s *Service) attachServicePlugins(v1s v1.Service) error {
 	}
 	selector.Add(*req)
 	source := k8sclient.NewListWatchFromClient(s.k8sRestClient, "apiplugins", s.namespace, selector)
-	store, _ := cache.NewInformer(source, &APIPlugin{}, 0, cache.ResourceEventHandlerFuncs{})
+	store, _ := cache.NewInformer(source, &ApiPlugin{}, 0, cache.ResourceEventHandlerFuncs{})
 	for _, obj := range store.List() {
-		plugin, ok := obj.(*APIPlugin)
+		plugin, ok := obj.(*ApiPlugin)
 		if !ok {
-			return fmt.Errorf("could not convert %v (%T) into APIPlugin", obj, obj)
+			return fmt.Errorf("could not convert %v (%T) into ApiPlugin", obj, obj)
 		}
 		// The APIs are saved with the same name as the service.
 		kongPlugin := &kong.Plugin{
@@ -138,7 +138,7 @@ func (s *Service) processPluginEvent(e Event) error {
 // Simply deals with attaching a plugin to a service given the service
 // has a valid API object in kong and a plugin of the same type doesn't already
 // exist for the service.
-func (s *Service) attachPluginToService(p APIPlugin) error {
+func (s *Service) attachPluginToService(p ApiPlugin) error {
 	// First of all attempt to retrieve the service provided
 	// by the plugin's selector to make sure it exists.
 	if serviceName, exists := p.Spec.Selector[s.pluginServiceSelectorLabel]; exists {
@@ -172,7 +172,7 @@ func (s *Service) attachPluginToService(p APIPlugin) error {
 
 // Deals with updating a plugin for the given service selector
 // if both the service exists and the plugin to be updated is already attached to the service.
-func (s *Service) updatePlugin(p APIPlugin) error {
+func (s *Service) updatePlugin(p ApiPlugin) error {
 	if serviceName, exists := p.Spec.Selector[s.pluginServiceSelectorLabel]; exists {
 		_, err := s.kongClient.GetAPI(serviceName)
 		if err != nil {
@@ -202,7 +202,7 @@ func (s *Service) updatePlugin(p APIPlugin) error {
 }
 
 // Deals with removing a plugin from an API service in kong.
-func (s *Service) detachPluginFromService(p APIPlugin) error {
+func (s *Service) detachPluginFromService(p ApiPlugin) error {
 	if serviceName, exists := p.Spec.Selector[s.pluginServiceSelectorLabel]; exists {
 		_, err := s.kongClient.GetAPI(serviceName)
 		if err != nil {
@@ -241,7 +241,7 @@ func (s *Service) monitorServiceEvents(namespace string, selector labels.Selecto
 		}
 	}
 	source := k8sclient.NewListWatchFromClient(s.k8sRestClient, "services", namespace, selector)
-	store, ctrl := cache.NewInformer(source, &APIPlugin{}, 0, cache.ResourceEventHandlerFuncs{
+	store, ctrl := cache.NewInformer(source, &ApiPlugin{}, 0, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			eventCallback(watch.Added, obj)
 		},
@@ -265,13 +265,13 @@ func (s *Service) monitorServiceEvents(namespace string, selector labels.Selecto
 }
 
 // Handles watching events occuring for our custom plugin resource.
-// All APIPlugin resources in the give namespace and selector combination are watched in this case.
+// All ApiPlugin resources in the give namespace and selector combination are watched in this case.
 func (s *Service) monitorPluginEvents(namespace string, selector labels.Selector, done <-chan struct{}) <-chan Event {
 	events := make(chan Event)
 	eventCallback := func(evType watch.EventType, obj interface{}) {
-		plugin, ok := obj.(*APIPlugin)
+		plugin, ok := obj.(*ApiPlugin)
 		if !ok {
-			log.Printf("could not convert %v (%T) into APIPlugin", obj, obj)
+			log.Printf("could not convert %v (%T) into ApiPlugin", obj, obj)
 			return
 		}
 		events <- Event{
@@ -280,7 +280,7 @@ func (s *Service) monitorPluginEvents(namespace string, selector labels.Selector
 		}
 	}
 	source := k8sclient.NewListWatchFromClient(s.k8sRestClient, "apiplugins", namespace, selector)
-	store, ctrl := cache.NewInformer(source, &APIPlugin{}, 0, cache.ResourceEventHandlerFuncs{
+	store, ctrl := cache.NewInformer(source, &ApiPlugin{}, 0, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			eventCallback(watch.Added, obj)
 		},

@@ -372,7 +372,7 @@ func (c *Client) newTargetEntry(upstreamNameOrId string, targetHost string, weig
 	return createdTarget, nil
 }
 
-func (c *Client) ListAPIPlugins(apiName string) (*PluginList, error) {
+func (c *Client) ListApiPlugins(apiName string) (*PluginList, error) {
 	plugins := &PluginList{}
 	log.Printf("\nMaking request to the kong admin api (%v) to retrieve plugins for the %v api", c.host+":"+c.port, apiName)
 	req, err := newRequest("GET", c.host+":"+c.port+apisEndpoint+apiName+pluginsEndpoint, nil)
@@ -406,7 +406,7 @@ func (c *Client) APIHasPlugin(apiName string, pluginName string) (bool, error) {
 		}
 		return hasPlugin, err
 	}
-	plugins, err := c.ListAPIPlugins(apiName)
+	plugins, err := c.ListApiPlugins(apiName)
 	if err != nil {
 		return hasPlugin, err
 	}
