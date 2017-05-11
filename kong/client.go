@@ -42,7 +42,7 @@ func newRequest(method string, url string, body io.Reader) (*http.Request, error
 	if err != nil {
 		return req, err
 	}
-	if method == "POST" || method == "PUT" {
+	if method == "POST" || method == "PUT" || method == "PATCH" {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	return req, err
