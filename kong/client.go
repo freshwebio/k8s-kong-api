@@ -474,14 +474,33 @@ func (c *Client) GetPlugin(pluginID string) (*Plugin, error) {
 // UpdatePlugin deals with updating an existing plugin with a new definition.
 // The provided plugin definition is expected to be without specific created instance information
 // such as Created, ID and APIID.
+// We must resolve the UUID from the API + plugin name combination as the kong endpoint
+// for updating plugins do not support plugin names as the path parameter eventhough the docs say otherwise.
 func (c *Client) UpdatePlugin(apiName string, plugin *Plugin) error {
-	b := new(bytes.Buffer)
-	err := json.NewEncoder(b).Encode(plugin)
+	apiPlugins, err := c.ListApiPlugins(apiName)
 	if err != nil {
 		return err
 	}
-	log.Printf("\nMaking request to the kong admin api (%v) to update the plugin with config name %v", c.host+":"+c.port, plugin.Name)
-	req, err := newRequest("PATCH", c.host+":"+c.port+apisEndpoint+apiName+pluginsEndpoint+plugin.Name, b)
+	i := 0
+	pluginID := ""
+	for i < len(apiPlugins.Data) && pluginID == "" {
+		if apiPlugins.Data[i].Name == plugin.Name {
+			pluginID = apiPlugins.Data[i].ID
+		} else {
+			i++
+		}
+	}
+	if pluginID == "" {
+		return fmt.Errorf("No plugin exists for the provided api with the configuration name: %v", plugin.Name)
+	}
+	b := new(bytes.Buffer)
+	err = json.NewEncoder(b).Encode(plugin)
+	if err != nil {
+		return err
+	}
+	log.Printf("\nMaking request to the kong admin api (%v) to update the api %v plugin with config name %v",
+		c.host+":"+c.port, apiName, plugin.Name)
+	req, err := newRequest("PATCH", c.host+":"+c.port+apisEndpoint+apiName+pluginsEndpoint+pluginID, b)
 	if err != nil {
 		return err
 	}
