@@ -124,7 +124,8 @@ func (s *Service) createKongGatewayApiForService(v1s v1.Service) error {
 		// Also when a service is exposing multiple ports the first one will always be used.
 		// TODO: Implement functionality that allows selection of port to be used for a Kong
 		// upstream when a service is exposing multiple ports.
-		upstreamURL := v1s.Spec.ClusterIP
+		// TODO: Implement a way to allow for TLS enabled services with https.
+		upstreamURL := "http://" + v1s.Spec.ClusterIP
 		if len(v1s.Spec.Ports) > 0 {
 			upstreamURL += ":" + strconv.Itoa(int(v1s.Spec.Ports[0].Port))
 		} else {
@@ -167,8 +168,9 @@ func (s *Service) createKongGatewayApiForService(v1s v1.Service) error {
 // TODO: Make it work for selecting either a named port or the port number from a range on a single service.
 func (s *Service) updateKongGatewayApiForService(old v1.Service, new v1.Service) error {
 	// Only proceed if there is a change in the upstream URL.
-	oldUpstreamURL := old.Spec.ClusterIP
-	newUpstreamURL := new.Spec.ClusterIP
+	// TODO: Add support for https.
+	oldUpstreamURL := "http://" + old.Spec.ClusterIP
+	newUpstreamURL := "http://" + new.Spec.ClusterIP
 	if len(old.Spec.Ports) > 0 && len(new.Spec.Ports) > 0 {
 		oldUpstreamURL += ":" + strconv.Itoa(int(old.Spec.Ports[0].Port))
 		newUpstreamURL += ":" + strconv.Itoa(int(new.Spec.Ports[0].Port))
@@ -227,7 +229,7 @@ func (s *Service) createKongGatewayApi(a GatewayApi) error {
 					return err
 				}
 				// Let's get the upstream URL from the service.
-				upstreamURL := service.Spec.ClusterIP
+				upstreamURL := "http://" + service.Spec.ClusterIP
 				if len(service.Spec.Ports) > 0 {
 					upstreamURL += ":" + strconv.Itoa(int(service.Spec.Ports[0].Port))
 				} else {
@@ -275,7 +277,7 @@ func (s *Service) updateKongGatewayApi(old GatewayApi, new GatewayApi) error {
 	if err != nil {
 		return err
 	}
-	upstreamURL := srvObj.Spec.ClusterIP
+	upstreamURL := "http://" + srvObj.Spec.ClusterIP
 	if len(srvObj.Spec.Ports) > 0 {
 		upstreamURL += ":" + strconv.Itoa(int(srvObj.Spec.Ports[0].Port))
 	} else {
