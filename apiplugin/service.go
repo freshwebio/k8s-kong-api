@@ -48,7 +48,7 @@ func (s *Service) Start(doneChan <-chan struct{}, wg *sync.WaitGroup) {
 	}
 	selector = selector.Add(*req)
 	serviceEvents := s.monitorServiceEvents(s.namespace, selector, doneChan)
-	pluginEvents := s.monitorPluginEvents(s.namespace, labels.Nothing(), doneChan)
+	pluginEvents := s.monitorPluginEvents(s.namespace, labels.NewSelector(), doneChan)
 	for {
 		select {
 		case event := <-pluginEvents:
