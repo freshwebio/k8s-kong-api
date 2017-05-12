@@ -1,6 +1,7 @@
 package gatewayapi
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -15,6 +16,13 @@ import (
 	"k8s.io/client-go/pkg/watch"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
+)
+
+var (
+	// ErrGatewayNotFound should be used when a gateway can't be found in the Kubernetes cluster.
+	ErrGatewayNotFound = errors.New("Could not find the specifed GatewayApi resource in Kubernetes")
+	// ErrServiceNotFound should be used when a service resource cannot be found in the Kubernetes cluster.
+	ErrServiceNotFound = errors.New("Could not find the specified v1.Service resources in Kubernetes")
 )
 
 // Service deals with monitoring and responding
@@ -456,13 +464,17 @@ func (s *Service) getGatewayApi(name string) (*GatewayApi, error) {
 	if err != nil {
 		return nil, err
 	}
-	gatewayApi, ok := obj.(*GatewayApi)
+	gatewayApiList, ok := obj.(*GatewayApiList)
 	if !ok {
-		err := fmt.Errorf("could not convert %v (%T) into GatewayApi", obj, obj)
+		err := fmt.Errorf("could not convert %v (%T) into GatewayApiList", obj, obj)
 		log.Println(err)
 		return nil, err
 	}
-	return gatewayApi, nil
+	if len(gatewayApiList.Items) > 0 {
+		gatewayApi := gatewayApiList.Items[0]
+		return &gatewayApi, nil
+	}
+	return nil, ErrGatewayNotFound
 }
 
 // Attempts to retrieve a service by it's service label selector.
@@ -482,11 +494,15 @@ func (s *Service) getServiceByServiceLabelSelector(value string) (*v1.Service, e
 	if err != nil {
 		return nil, err
 	}
-	service, ok := obj.(*v1.Service)
+	serviceList, ok := obj.(*v1.ServiceList)
 	if !ok {
-		err := fmt.Errorf("could not convert %v (%T) into Service", obj, obj)
+		err := fmt.Errorf("could not convert %v (%T) into ServiceList", obj, obj)
 		log.Println(err)
 		return nil, err
 	}
-	return service, nil
+	if len(serviceList.Items) > 0 {
+		service := serviceList.Items[0]
+		return &service, nil
+	}
+	return nil, ErrServiceNotFound
 }
