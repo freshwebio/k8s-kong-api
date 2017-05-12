@@ -40,7 +40,7 @@ func NewService(k8sRestClient *rest.RESTClient, k8sClient *k8sclient.Client, kon
 // events from k8s gatewayapi resources as well as services to propogate changes to kong.
 // This method should be called asynchronously in it's own goroutine.
 func (s *Service) Start(doneChan <-chan struct{}, wg *sync.WaitGroup) {
-	log.Println("Starting the plugin watcher service")
+	log.Println("Starting the gatewayapi watcher service")
 	// Let's monitor our service and plugin events.
 	selector := labels.NewSelector()
 	req, err := labels.NewRequirement(s.apiLabel, selection.Exists, []string{})
