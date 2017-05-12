@@ -51,7 +51,7 @@ type Plugin struct {
 	APIID   string                 `json:"api_id,omitempty"`
 	Name    string                 `json:"name"`
 	Config  map[string]interface{} `json:"config"`
-	Enabled bool                   `json:"enabled"`
+	Enabled *bool                  `json:"enabled,omitempty"`
 	Created int                    `json:"created_at,omitempty"`
 }
 
