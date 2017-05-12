@@ -478,6 +478,7 @@ func (s *Service) getGatewayApi(name string) (*GatewayApi, error) {
 }
 
 // Attempts to retrieve a service by it's service label selector.
+// This will only query services with the api label set. e.g. kong.gateway.api
 func (s *Service) getServiceByServiceLabelSelector(value string) (*v1.Service, error) {
 	selector := labels.NewSelector()
 	req, err := labels.NewRequirement(s.serviceSelectorLabel, selection.Equals, []string{value})
@@ -485,6 +486,12 @@ func (s *Service) getServiceByServiceLabelSelector(value string) (*v1.Service, e
 		return nil, err
 	}
 	selector.Add(*req)
+	// We also need to add a requirement to limit the range to services that are enabled for Gateway APIs.
+	req2, err := labels.NewRequirement(s.apiLabel, selection.Exists, []string{})
+	if err != nil {
+		return nil, err
+	}
+	selector.Add(*req2)
 	obj, err := s.k8sClient.Clientset.CoreV1().RESTClient().Get().
 		Namespace(s.namespace).
 		Resource("services").
