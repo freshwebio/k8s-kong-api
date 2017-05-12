@@ -337,14 +337,12 @@ func (s *Service) deleteKongGatewayApi(a GatewayApi) error {
 				// Don't do anything as the API object doesn't exist.
 				// Also this should not indicate an error so return nil.
 				return nil
-			} else {
-				return err
 			}
-		} else {
-			err = s.kongClient.DeleteAPI(apiName)
-			if err != nil {
-				return err
-			}
+			return err
+		}
+		err = s.kongClient.DeleteAPI(apiName)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -464,17 +462,13 @@ func (s *Service) getGatewayApi(name string) (*GatewayApi, error) {
 	if err != nil {
 		return nil, err
 	}
-	gatewayApiList, ok := obj.(*GatewayApiList)
+	gatewayApi, ok := obj.(*GatewayApi)
 	if !ok {
-		err := fmt.Errorf("could not convert %v (%T) into GatewayApiList", obj, obj)
+		err := fmt.Errorf("could not convert %v (%T) into GatewayApi", obj, obj)
 		log.Println(err)
 		return nil, err
 	}
-	if len(gatewayApiList.Items) > 0 {
-		gatewayApi := gatewayApiList.Items[0]
-		return &gatewayApi, nil
-	}
-	return nil, ErrGatewayNotFound
+	return gatewayApi, nil
 }
 
 // Attempts to retrieve a service by it's service label selector.
