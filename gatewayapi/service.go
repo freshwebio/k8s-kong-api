@@ -55,7 +55,7 @@ func (s *Service) Start(doneChan <-chan struct{}, wg *sync.WaitGroup) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	selector.Add(*req)
+	selector = selector.Add(*req)
 	serviceEvents, serviceUpdateEvents := s.monitorServiceEvents(s.namespace, selector, doneChan)
 	gatewayApiEvents, gatewayApiUpdateEvents := s.monitorGatewayApiEvents(s.namespace, selector, doneChan)
 	for {
@@ -479,13 +479,13 @@ func (s *Service) getServiceByServiceLabelSelector(value string) (*v1.Service, e
 	if err != nil {
 		return nil, err
 	}
-	selector.Add(*req)
+	selector = selector.Add(*req)
 	// We also need to add a requirement to limit the range to services that are enabled for Gateway APIs.
 	req2, err := labels.NewRequirement(s.apiLabel, selection.Exists, []string{})
 	if err != nil {
 		return nil, err
 	}
-	selector.Add(*req2)
+	selector = selector.Add(*req2)
 	obj, err := s.k8sClient.Clientset.CoreV1().RESTClient().Get().
 		Namespace(s.namespace).
 		Resource("services").

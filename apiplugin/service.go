@@ -46,7 +46,7 @@ func (s *Service) Start(doneChan <-chan struct{}, wg *sync.WaitGroup) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	selector.Add(*req)
+	selector = selector.Add(*req)
 	serviceEvents := s.monitorServiceEvents(s.namespace, selector, doneChan)
 	pluginEvents := s.monitorPluginEvents(s.namespace, selector, doneChan)
 	for {
@@ -89,7 +89,7 @@ func (s *Service) attachServicePlugins(v1s v1.Service) error {
 	if err != nil {
 		return err
 	}
-	selector.Add(*req)
+	selector = selector.Add(*req)
 	source := k8sclient.NewListWatchFromClient(s.k8sRestClient, "apiplugins", s.namespace, selector)
 	store, _ := cache.NewInformer(source, &ApiPlugin{}, 0, cache.ResourceEventHandlerFuncs{})
 	for _, obj := range store.List() {
