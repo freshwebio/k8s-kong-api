@@ -57,7 +57,7 @@ func (s *Service) Start(doneChan <-chan struct{}, wg *sync.WaitGroup) {
 	}
 	selector = selector.Add(*req)
 	serviceEvents, serviceUpdateEvents := s.monitorServiceEvents(s.namespace, selector, doneChan)
-	gatewayApiEvents, gatewayApiUpdateEvents := s.monitorGatewayApiEvents(s.namespace, selector, doneChan)
+	gatewayApiEvents, gatewayApiUpdateEvents := s.monitorGatewayApiEvents(s.namespace, labels.Nothing(), doneChan)
 	for {
 		select {
 		case event := <-gatewayApiEvents:
