@@ -8,7 +8,7 @@ import (
 	"k8s.io/client-go/pkg/api/unversioned"
 )
 
-// G provides the type for an
+// GatewayApi provides the type for an
 // API plugin resource in Kubernetes.
 type GatewayApi struct {
 	unversioned.TypeMeta `json:",inline"`
