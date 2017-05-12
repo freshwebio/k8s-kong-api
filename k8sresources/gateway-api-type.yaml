@@ -1,0 +1,7 @@
+apiVersion: extensions/v1beta1
+kind: ThirdPartyResource
+description: "A specification for a Kong API object mapping to a k8s service."
+metadata:
+  name: "gateway-api.k8s.freshweb.io"
+versions:
+  - name: v1

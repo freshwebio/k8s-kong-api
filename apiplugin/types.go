@@ -6,7 +6,6 @@ import (
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/meta"
 	"k8s.io/client-go/pkg/api/unversioned"
-	"k8s.io/client-go/pkg/api/v1"
 )
 
 // ApiPlugin provides the type for an
@@ -21,12 +20,6 @@ type ApiPlugin struct {
 type Event struct {
 	Type   string    `json:"type"`
 	Object ApiPlugin `json:"object"`
-}
-
-// ServiceEvent provides the event recieved for service watchers.
-type ServiceEvent struct {
-	Type   string     `json:"type"`
-	Object v1.Service `json:"object"`
 }
 
 // GetObjectKind provides the method to expose the kind

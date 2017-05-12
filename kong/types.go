@@ -3,11 +3,20 @@ package kong
 // API represents a subset of the kong API object
 // which provide the properties this integration utilises.
 type API struct {
-	ID          string   `json:"id,omitempty"`
-	Name        string   `json:"name"`
-	URIs        []string `json:"uris"`
-	UpstreamURL string   `json:"upstream_url"`
-	StripURI    bool     `json:"strip_uri,omitempty"`
+	ID                     string   `json:"id,omitempty"`
+	Name                   string   `json:"name"`
+	Hosts                  []string `json:"hosts,omitempty"`
+	URIs                   []string `json:"uris,omitempty"`
+	UpstreamURL            string   `json:"upstream_url"`
+	StripURI               *bool    `json:"strip_uri,omitempty"`
+	Methods                []string `json:"methods,omitempty"`
+	PreserveHost           *bool    `json:"preserve_host,omitempty"`
+	Retries                int64    `json:"retries,omitempty"`
+	UpstreamConnectTimeout int64    `json:"upstream_connect_timeout,omitempty"`
+	UpstreamSendTimeout    int64    `json:"upstream_send_timeout,omitempty"`
+	UpstreamReadTimeout    int64    `json:"upstream_read_timeout,omitempty"`
+	HTTPSOnly              *bool    `json:"https_only,omitempty"`
+	HTTPIfTerminated       *bool    `json:"http_if_terminated,omitempty"`
 }
 
 // Upstream provides a subset of the kong Upstream object.
@@ -42,7 +51,7 @@ type Plugin struct {
 	APIID   string                 `json:"api_id,omitempty"`
 	Name    string                 `json:"name"`
 	Config  map[string]interface{} `json:"config"`
-	Enabled bool                   `json:"enabled,omitempty"`
+	Enabled bool                   `json:"enabled"`
 	Created int                    `json:"created_at,omitempty"`
 }
 

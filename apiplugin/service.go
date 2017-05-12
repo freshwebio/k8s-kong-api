@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/freshwebio/k8s-kong-api/k8sclient"
+	"github.com/freshwebio/k8s-kong-api/k8stypes"
 	"github.com/freshwebio/k8s-kong-api/kong"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/labels"
@@ -21,7 +22,7 @@ import (
 type Service struct {
 	k8sRestClient              *rest.RESTClient
 	k8sClient                  *k8sclient.Client
-	routesLabel                string
+	apiLabel                   string
 	pluginServiceSelectorLabel string
 	namespace                  string
 	kongClient                 *kong.Client
@@ -29,9 +30,9 @@ type Service struct {
 
 // NewService creates a new instance of the ApiPlugin service.
 func NewService(k8sRestClient *rest.RESTClient, k8sClient *k8sclient.Client, kong *kong.Client, namespace string,
-	routesLabel string, pluginServiceSelectorLabel string) *Service {
+	apiLabel string, pluginServiceSelectorLabel string) *Service {
 	return &Service{k8sRestClient: k8sRestClient, k8sClient: k8sClient, kongClient: kong, namespace: namespace,
-		routesLabel: routesLabel, pluginServiceSelectorLabel: pluginServiceSelectorLabel}
+		apiLabel: apiLabel, pluginServiceSelectorLabel: pluginServiceSelectorLabel}
 }
 
 // Start deals with beginning the monitoring process which deals with monitoring
@@ -41,7 +42,7 @@ func (s *Service) Start(doneChan <-chan struct{}, wg *sync.WaitGroup) {
 	log.Println("Starting the plugin watcher service")
 	// Let's monitor our service and plugin events.
 	selector := labels.NewSelector()
-	req, err := labels.NewRequirement(s.routesLabel, selection.Exists, []string{})
+	req, err := labels.NewRequirement(s.apiLabel, selection.Exists, []string{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -69,7 +70,7 @@ func (s *Service) Start(doneChan <-chan struct{}, wg *sync.WaitGroup) {
 
 // Handles processing the service events we are interested in for the sake
 // of our plugins.
-func (s *Service) processServiceEvent(e ServiceEvent) error {
+func (s *Service) processServiceEvent(e k8stypes.ServiceEvent) error {
 	switch e.Type {
 	case "ADDED", "MODIFIED":
 		err := s.attachServicePlugins(e.Object)
@@ -228,15 +229,15 @@ func (s *Service) detachPluginFromService(p ApiPlugin) error {
 }
 
 // Writes service events from k8s to a new channel to be consumed.
-func (s *Service) monitorServiceEvents(namespace string, selector labels.Selector, done <-chan struct{}) <-chan ServiceEvent {
-	events := make(chan ServiceEvent)
+func (s *Service) monitorServiceEvents(namespace string, selector labels.Selector, done <-chan struct{}) <-chan k8stypes.ServiceEvent {
+	events := make(chan k8stypes.ServiceEvent)
 	eventCallback := func(evType watch.EventType, obj interface{}) {
 		service, ok := obj.(*v1.Service)
 		if !ok {
 			log.Printf("could not convert %v (%T) into Service", obj, obj)
 			return
 		}
-		events <- ServiceEvent{
+		events <- k8stypes.ServiceEvent{
 			Type:   string(evType),
 			Object: *service,
 		}

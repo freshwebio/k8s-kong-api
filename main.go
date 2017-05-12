@@ -18,22 +18,19 @@ import (
 	"github.com/namsral/flag"
 
 	"github.com/freshwebio/k8s-kong-api/apiplugin"
+	"github.com/freshwebio/k8s-kong-api/gatewayapi"
 	"github.com/freshwebio/k8s-kong-api/k8sclient"
 	"github.com/freshwebio/k8s-kong-api/kong"
-	"github.com/freshwebio/k8s-kong-api/serviceapi"
 )
 
 var (
-	kubeconfig                 = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	kubeNamespace              = flag.String("namespace", "default", "The namespace to use to watch k8s events in.")
-	kongScheme                 = flag.String("kongscheme", "http://", "The scheme of the kong admin api, http or https")
-	kongHost                   = flag.String("konghost", "kong", "The host of the kong admin api")
-	kongPort                   = flag.String("kongport", "8001", "The port the kong admin api lives on")
-	vhostPrefix                = flag.String("vhostprefix", "kong-upstream-", "The prefix to be used for the kong upstream object virtual hosts")
-	routesLabel                = flag.String("routeslabel", "kong.api.routes", "The name of the label to identify kong services")
-	portLabel                  = flag.String("portlabel", "kong.api.port", "The name of the label that provides the port to be used for a service")
-	stripUriLabel              = flag.String("stripurilabel", "kong.api.stripuri", "The name of the label that provides whether to strip the URI from the forwarded request")
-	pluginServiceSelectorLabel = flag.String("sslabel", "service", "The name the label to be used for selecting services in plugin resources")
+	kubeconfig           = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	kubeNamespace        = flag.String("namespace", "default", "The namespace to use to watch k8s events in.")
+	kongScheme           = flag.String("kongscheme", "http://", "The scheme of the kong admin api, http or https")
+	kongHost             = flag.String("konghost", "kong", "The host of the kong admin api")
+	kongPort             = flag.String("kongport", "8001", "The port the kong admin api lives on")
+	apiLabel             = flag.String("apilabel", "kong.gateway.api", "The name of the label used to identify a kong API that references a GatewayApi resource")
+	serviceSelectorLabel = flag.String("sslabel", "service", "The name the label to be used for selecting services in custom k8s resources")
 )
 
 func main() {
@@ -56,10 +53,7 @@ func main() {
 	}
 	// Now let's initialise our kong client.
 	kongClient := kong.NewClient(*kongHost, *kongPort, *kongScheme)
-	// Now let's instantiate and start our api service which deals
-	// with listening to kubernetes events and propogating events
-	// to kong accordingly. This service maps API objects in kong to services in k8s.
-	srv := serviceapi.NewService(kongClient, cli, *kubeNamespace, *routesLabel, *portLabel, *vhostPrefix, *stripUriLabel)
+
 	// Now setup our api plugin scheme.
 	groupVersion := unversioned.GroupVersion{
 		Group:   "k8s.freshweb.io",
@@ -71,6 +65,8 @@ func main() {
 				groupVersion,
 				&apiplugin.ApiPlugin{},
 				&apiplugin.ApiPluginList{},
+				&gatewayapi.GatewayApi{},
+				&gatewayapi.GatewayApiList{},
 				&api.ListOptions{},
 				&api.DeleteOptions{},
 			)
@@ -78,7 +74,7 @@ func main() {
 			return nil
 		})
 	if err = schemeBuilder.AddToScheme(api.Scheme); err != nil {
-		log.Fatalf("error setting up apiplugin scheme: %v", err)
+		log.Fatalf("error setting up apiplugin and gatewayapi scheme: %v", err)
 	}
 	var k8sRestConfig *rest.Config
 	if *kubeconfig == "" {
@@ -99,14 +95,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("error creating our general k8s client for the apiplugin service: %v", err)
 	}
+
+	// Instantiate the GatewayApi manager.
+	gatewayApiService := gatewayapi.NewService(k8sRestClient, cli, kongClient, *kubeNamespace, *apiLabel, *serviceSelectorLabel)
+
 	// Now instantiate our ApiPlugin manager.
-	apipluginService := apiplugin.NewService(k8sRestClient, cli, kongClient, *kubeNamespace, *routesLabel, *pluginServiceSelectorLabel)
+	apipluginService := apiplugin.NewService(k8sRestClient, cli, kongClient, *kubeNamespace, *apiLabel, *serviceSelectorLabel)
 
 	// Asynchronously start watching and refreshing apiplugins and kong API objects
 	wg := sync.WaitGroup{}
 	doneChan := make(chan struct{})
 	wg.Add(1)
-	go srv.Start(doneChan, &wg)
+	go gatewayApiService.Start(doneChan, &wg)
 
 	wg.Add(1)
 	go apipluginService.Start(doneChan, &wg)
